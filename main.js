@@ -1,10 +1,9 @@
 const express = require("express");
 const app = express();
-const cors = require("cors")
-const PORT = 3000;
-app.use(cors())
+const cors = require("cors");
+const PORT = process.env.PORT || 3000; // Use Render's PORT or default to 3000
+app.use(cors());
 app.use(express.json());
-
 
 const animals = [
   {
@@ -37,13 +36,13 @@ app.get("/", (req, res) => {
   res.json({ message: "hello" });
 });
 
-app.get("/shop/:cateogry:id",(req,res) => {
-    console.log(req.params)
-    res.send("shop")
-})
+app.get("/shop/:category:id", (req, res) => {
+  console.log(req.params);
+  res.send("shop");
+});
 
 app.get("/api", (req, res) => {
-  res.status(200).json({ message: "request send Succesfully", data: animals });
+  res.status(200).json({ message: "request sent successfully", data: animals });
 });
 
 app.get("/api/:id", (req, res) => {
@@ -52,15 +51,17 @@ app.get("/api/:id", (req, res) => {
   if (!animalByID) {
     return res
       .status(404)
-      .json({ message: "Animal not Found Try other ID", data: null });
+      .json({ message: "Animal not found. Try another ID.", data: null });
   }
-  res.json({ message: "request send Succesfully", data: animalByID });
+  res.json({ message: "request sent successfully", data: animalByID });
 });
 
 app.post("/api", (req, res) => {
   const { name, age, specie } = req.body;
   if (!age || !specie) {
-    res.status(400).json({ message: "age and specie is required", data: null });
+    return res
+      .status(400)
+      .json({ message: "Age and specie are required", data: null });
   }
   const lastid = animals[animals.length - 1]?.id || 0;
   const newObj = {
@@ -73,7 +74,7 @@ app.post("/api", (req, res) => {
   animals.push(newObj);
   res
     .status(201)
-    .json({ message: "animal created successfully", data: newObj });
+    .json({ message: "Animal created successfully", data: newObj });
 });
 
 app.delete("/api/:id", (req, res) => {
@@ -84,28 +85,32 @@ app.delete("/api/:id", (req, res) => {
   }
   const animal = animals.splice(index, 1);
 
-  res.json({ messsage: "deleted successfuly", data: animal });
+  res.json({ message: "Deleted successfully", data: animal });
 });
 
+app.put("/api/:id", (req, res) => {
+  const { name, age, specie } = req.body;
+  const { id } = req.params;
+  const index = animals.findIndex((el) => el.id === Number(id));
+  if (index === -1) {
+    return res.status(404).json({ message: "Not found", data: null });
+  }
+  animals[index] = {
+    ...animals[index],
+    name: name || animals[index].name,
+    age: age || animals[index].age,
+    specie: specie || animals[index].specie,
+  };
 
-app.put("/api/:id",(req,res) => {
-    const { name, age, specie } = req.body;
-    const { id } = req.params;
-    const index = animals.findIndex(el => el.id === Number(id))
-    if(index === -1){
-        return res.status(404).json({message:"Not Found",data:null})
-    }
-    animals[index] = {
-        ...animals[index],
-        name:name || animals[index].name,
-        age:age || animals[index].age,
-        specie:specie || animals[index].specie,
-       
-    }
-
-    res.status(200).json({message:"updated successfully",data:animals[index]})
-})
+  res
+    .status(200)
+    .json({ message: "Updated successfully", data: animals[index] });
+});
 
 app.listen(PORT, () => {
-  console.log(`server running on http://localhost:${PORT}`);
+  const host =
+    process.env.NODE_ENV === "production"
+      ? "https://backside-svelte-1.onrender.com"
+      : `http://localhost:${PORT}`;
+  console.log(`Server running on ${host}`);
 });
